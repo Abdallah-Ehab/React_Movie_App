@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { useQueries } from '@tanstack/react-query'
 import Navbar from '@/components/layout/Navbar'
 import HeartIcon from '@/components/HeartIcon'
 import MovieGrid from '@/components/movie/MovieGrid'
@@ -46,56 +47,25 @@ function MovieDetailsSkeleton() {
 export default function MovieDetails() {
   const { id } = useParams()
   const { toggleWishlist, isInWishlist } = useWishlist()
-  const [movie, setMovie] = useState(null)
-  const [videos, setVideos] = useState([])
-  const [recommendations, setRecommendations] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
-  const loadMovie = useCallback(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
+  const results = useQueries({
+    queries: [
+      { queryKey: ['movie', id], queryFn: () => tmdbFetch(`/movie/${id}`) },
+      { queryKey: ['movie', id, 'videos'], queryFn: () => tmdbFetch(`/movie/${id}/videos`) },
+      {
+        queryKey: ['movie', id, 'recommendations'],
+        queryFn: () => tmdbFetch(`/movie/${id}/recommendations`, { page: 1 }),
+      },
+    ],
+  })
 
-    Promise.all([
-      tmdbFetch(`/movie/${id}`),
-      tmdbFetch(`/movie/${id}/videos`),
-      tmdbFetch(`/movie/${id}/recommendations`, { page: 1 }),
-    ])
-      .then(([details, videoData, recommendationData]) => {
-        if (cancelled) return
-        setMovie(details)
-        setVideos(videoData.results || [])
-        setRecommendations(recommendationData.results || [])
-      })
-      .catch((err) => {
-        if (cancelled) return
-        setError(err.message)
-        setMovie(null)
-        setVideos([])
-        setRecommendations([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [id])
-
-  useEffect(() => loadMovie(), [loadMovie])
+  const [movieQuery, videosQuery, recsQuery] = results
+  const loading = movieQuery.isLoading || videosQuery.isLoading || recsQuery.isLoading
+  const error = movieQuery.error || videosQuery.error || recsQuery.error
 
   useEffect(() => {
-    document.title = movie ? `${movie.title} | Movie App` : 'Movie Details | Movie App'
-  }, [movie])
-
-  const trailer = useMemo(
-    () =>
-      videos.find((video) => video.site === 'YouTube' && video.type === 'Trailer') ||
-      videos.find((video) => video.site === 'YouTube'),
-    [videos],
-  )
+    document.title = movieQuery.data ? `${movieQuery.data.title} | Movie App` : 'Movie Details | Movie App'
+  }, [movieQuery.data])
 
   if (loading) {
     return (
@@ -107,7 +77,7 @@ export default function MovieDetails() {
   }
 
   if (error) {
-    const notFound = error.includes('404')
+    const notFound = error.message?.includes('404')
 
     return (
       <div className="min-h-screen bg-background">
@@ -116,21 +86,24 @@ export default function MovieDetails() {
           <h1 className="text-3xl font-semibold mb-4">
             {notFound ? 'Movie not found' : 'Failed to load movie'}
           </h1>
-          <p className="text-muted-foreground mb-6">{notFound ? 'We could not find that movie.' : error}</p>
-          {!notFound && (
-            <Button onClick={loadMovie} className="bg-[#FFE353] text-[#292D32] hover:bg-[#E8C83A]">
-              Retry
-            </Button>
-          )}
+          <p className="text-muted-foreground mb-6">
+            {notFound ? 'We could not find that movie.' : error.message}
+          </p>
         </section>
       </div>
     )
   }
 
+  const movie = movieQuery.data
   if (!movie) return null
 
   const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 'TBA'
   const liked = isInWishlist(movie.id)
+  const videos = videosQuery.data?.results || []
+  const recommendations = recsQuery.data?.results || []
+
+  const trailer = videos.find((v) => v.site === 'YouTube' && v.type === 'Trailer')
+    || videos.find((v) => v.site === 'YouTube')
 
   return (
     <div className="min-h-screen bg-background">
