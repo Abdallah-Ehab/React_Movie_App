@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import Navbar from '@/components/layout/Navbar'
 import MovieGrid from '@/components/movie/MovieGrid'
 import MovieGridSkeleton from '@/components/movie/MovieGridSkeleton'
@@ -11,55 +12,25 @@ export default function Search() {
   const query = searchParams.get('query') || ''
   const parsedPage = Number.parseInt(searchParams.get('page') || '1', 10)
   const currentPage = Number.isNaN(parsedPage) ? 1 : Math.min(Math.max(parsedPage, 1), 500)
+  const trimmedQuery = query.trim()
 
-  const [movies, setMovies] = useState([])
-  const [totalPages, setTotalPages] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    document.title = query ? `Search: ${query} | Movie App` : 'Search | Movie App'
-  }, [query])
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['search', trimmedQuery, currentPage],
+    queryFn: () => tmdbFetch('/search/movie', { query: trimmedQuery, page: currentPage }),
+    enabled: !!trimmedQuery,
+  })
 
   useEffect(() => {
-    const trimmedQuery = query.trim()
+    document.title = trimmedQuery ? `Search: ${trimmedQuery} | Movie App` : 'Search | Movie App'
+  }, [trimmedQuery])
 
-    if (!trimmedQuery) {
-      setMovies([])
-      setTotalPages(0)
-      setError(null)
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-
-    tmdbFetch('/search/movie', { query: trimmedQuery, page: currentPage })
-      .then((data) => {
-        if (cancelled) return
-        setMovies(data.results || [])
-        setTotalPages(Math.min(data.total_pages || 0, 500))
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [query, currentPage])
+  const movies = data?.results || []
+  const totalPages = Math.min(data?.total_pages || 0, 500)
 
   function handlePageChange(newPage) {
-    setSearchParams({ query: query.trim(), page: String(newPage) })
+    setSearchParams({ query: trimmedQuery, page: String(newPage) })
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
-
-  const trimmedQuery = query.trim()
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,13 +46,13 @@ export default function Search() {
           </div>
         ) : error ? (
           <div className="text-center py-12 text-destructive">
-            <p>Failed to load search results: {error}</p>
+            <p>Failed to load search results: {error.message}</p>
           </div>
-        ) : loading ? (
+        ) : isLoading ? (
           <MovieGridSkeleton count={8} />
         ) : movies.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-lg">No movies found for "{trimmedQuery}"</p>
+            <p className="text-lg">No movies found for &quot;{trimmedQuery}&quot;</p>
           </div>
         ) : (
           <>
