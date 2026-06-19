@@ -48,7 +48,7 @@ export default function Hero() {
             />
             <Button
               type="submit"
-              className="h-[46px] w-[120px] rounded-r-[10px] rounded-l-none bg-[#FFE353] text-white hover:bg-[#E8C83A] cursor-pointer"
+              className="h-[46px] w-[120px] rounded-r-[10px] rounded-l-none bg-[#FFE353] text-[#292D32] hover:bg-[#E8C83A] cursor-pointer"
             >
               <FontAwesomeIcon icon={faSearch} className="mr-1" />
               Search
