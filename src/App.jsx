@@ -4,6 +4,8 @@ import { Toaster } from 'sonner'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
+import Search from '@/pages/Search'
+import MovieDetails from '@/pages/MovieDetails'
 import PrivateRoute from '@/components/layout/PrivateRoute'
 
 const Wishlist = React.lazy(() => import('@/pages/Wishlist'))
@@ -16,6 +18,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/movie/:id" element={<MovieDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
