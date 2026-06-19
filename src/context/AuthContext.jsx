@@ -32,9 +32,6 @@ function LocalAuthProvider({ children }) {
     setActionLoading(true)
     setError(null)
     try {
-      if (!email || !email.includes('@')) throw new Error('Invalid email')
-      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters')
-
       const nextUser = createLocalUser(email)
       setUser(nextUser)
       toast.success('Welcome back!')
@@ -52,10 +49,6 @@ function LocalAuthProvider({ children }) {
     setActionLoading(true)
     setError(null)
     try {
-      if (!email || !email.includes('@')) throw new Error('Invalid email')
-      if (!username || username.length < 3) throw new Error('Username must be at least 3 characters')
-      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters')
-
       const nextUser = createLocalUser(email, username)
       setUser(nextUser)
       toast.success('Account created!')
@@ -91,6 +84,10 @@ function ClerkAuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    console.log('Clerk mode: loaded=%s signedIn=%s', isLoaded, isSignedIn)
+  }, [isLoaded, isSignedIn])
+
+  useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn && clerkUser) {
       setUser({
@@ -104,12 +101,10 @@ function ClerkAuthProvider({ children }) {
   }, [isLoaded, isSignedIn, clerkUser])
 
   const login = useCallback(async (email, password) => {
+    console.log('Clerk login call with:', { email, password, emailType: typeof email, passwordType: typeof password })
     setActionLoading(true)
     setError(null)
     try {
-      if (!email || !email.includes('@')) throw new Error('Invalid email')
-      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters')
-
       const signInResponse = await clerk.client.signIn.create({
         identifier: email,
         password,
@@ -122,7 +117,11 @@ function ClerkAuthProvider({ children }) {
       await clerk.setActive({ session: signInResponse.createdSessionId })
       toast.success('Welcome back!')
     } catch (err) {
+      console.log('Clerk login error full:', err)
+      console.log('Clerk login error errors:', err.errors)
       const message = err.errors?.[0]?.message || err.message || 'Login failed'
+      const field = err.errors?.[0]?.meta?.param || 'unknown'
+      console.log(`Clerk login error for field "${field}":`, message)
       setError(message)
       toast.error(message)
       throw new Error(message)
@@ -132,13 +131,10 @@ function ClerkAuthProvider({ children }) {
   }, [clerk])
 
   const register = useCallback(async (email, username, password) => {
+    console.log('Clerk register call with:', { email, username, password, emailType: typeof email, usernameType: typeof username, passwordType: typeof password })
     setActionLoading(true)
     setError(null)
     try {
-      if (!email || !email.includes('@')) throw new Error('Invalid email')
-      if (!username || username.length < 3) throw new Error('Username must be at least 3 characters')
-      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters')
-
       const signUpResponse = await clerk.client.signUp.create({
         emailAddress: email,
         username,
@@ -152,7 +148,11 @@ function ClerkAuthProvider({ children }) {
         throw new Error('Registration requires additional steps')
       }
     } catch (err) {
+      console.log('Clerk register error full:', err)
+      console.log('Clerk register error errors:', err.errors)
       const message = err.errors?.[0]?.message || err.message || 'Registration failed'
+      const field = err.errors?.[0]?.meta?.param || 'unknown'
+      console.log(`Clerk register error for field "${field}":`, message)
       setError(message)
       toast.error(message)
       throw new Error(message)
