@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
+import { LocaleProvider } from './context/LocaleContext'
 import { WishlistProvider } from './context/WishlistContext'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
@@ -31,11 +32,13 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        {clerkPubKey ? (
-          <ClerkProvider publishableKey={clerkPubKey}>{app}</ClerkProvider>
-        ) : (
-          app
-        )}
+        <LocaleProvider>
+          {clerkPubKey ? (
+            <ClerkProvider publishableKey={clerkPubKey}>{app}</ClerkProvider>
+          ) : (
+            app
+          )}
+        </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,
