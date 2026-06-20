@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,18 +6,24 @@ import { z } from 'zod'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '@/context/AuthContext'
+import { useLocale } from '@/context/LocaleContext'
+import OAuthButtons from '@/components/auth/OAuthButtons'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
+function createLoginSchema(t) {
+  return z.object({
+    email: z.string().email(t('auth.invalidEmail')),
+    password: z.string().min(6, t('auth.shortPassword')),
+  })
+}
 
 export default function Login() {
   const navigate = useNavigate()
   const { login, user } = useAuth()
+  const { t, isRtl } = useLocale()
+  const loginSchema = useMemo(() => createLoginSchema(t), [t])
   const {
     register,
     handleSubmit,
@@ -29,8 +35,8 @@ export default function Login() {
   })
 
   useEffect(() => {
-    document.title = 'Login | Movie App'
-  }, [])
+    document.title = t('auth.loginTitle')
+  }, [t])
 
   useEffect(() => {
     if (user) navigate('/')
@@ -49,9 +55,9 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <h1 className="text-2xl font-semibold text-center">Movie App</h1>
+          <h1 className="text-2xl font-semibold text-center">{t('app.name')}</h1>
           <p className="text-sm text-muted-foreground text-center">
-            Sign in to your account
+            {t('auth.signInSubtitle')}
           </p>
         </CardHeader>
         <CardContent>
@@ -62,7 +68,7 @@ export default function Login() {
             <div>
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder={t('auth.email')}
                 {...register('email')}
                 className="w-full"
               />
@@ -73,7 +79,7 @@ export default function Login() {
             <div>
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder={t('auth.password')}
                 {...register('password')}
                 className="w-full"
               />
@@ -87,18 +93,24 @@ export default function Login() {
               className="w-full bg-[#FFE353] text-[#292D32] hover:bg-[#E8C83A] cursor-pointer"
             >
               {isSubmitting && (
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-2" />
+                <FontAwesomeIcon icon={faSpinner} className={`animate-spin ${isRtl ? 'ml-2' : 'mr-2'}`} />
               )}
-              {isSubmitting ? 'Signing in...' : 'Login'}
+              {isSubmitting ? t('auth.signingIn') : t('auth.login')}
             </Button>
           </form>
+          <div className="mt-4">
+            <OAuthButtons
+              mode="signIn"
+              onError={(message) => setError('root', { message })}
+            />
+          </div>
           <p className="mt-4 text-sm text-center text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <Link
               to="/register"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Register
+              {t('auth.register')}
             </Link>
           </p>
         </CardContent>

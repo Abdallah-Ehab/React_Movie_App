@@ -8,11 +8,13 @@ import MovieGridSkeleton from '@/components/movie/MovieGridSkeleton'
 import Pagination from '@/components/Pagination'
 import BackToTop from '@/components/BackToTop'
 import { useMovies } from '@/hooks/useMovies'
+import { useLocale } from '@/context/LocaleContext'
 
 export default function Home() {
   const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState('popularity.desc')
   const [genreIds, setGenreIds] = useState([])
+  const { t } = useLocale()
 
   const { movies, totalPages, loading, error } = useMovies({
     page,
@@ -21,8 +23,8 @@ export default function Home() {
   })
 
   useEffect(() => {
-    document.title = 'Now Playing | Movie App'
-  }, [])
+    document.title = `${t('home.title')} | ${t('app.name')}`
+  }, [t])
 
   useEffect(() => {
     if (!loading) {
@@ -53,7 +55,7 @@ export default function Home() {
       <Hero />
       <section className="px-8 py-10 max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-semibold">Now Playing</h2>
+          <h2 className="text-3xl font-semibold">{t('home.title')}</h2>
           <SortSelect value={sortBy} onChange={handleSortChange} />
         </div>
 
@@ -63,7 +65,7 @@ export default function Home() {
 
         {error && (
           <div className="text-center py-12 text-destructive">
-            <p>Failed to load movies: {error}</p>
+            <p>{t('home.failed', { error })}</p>
           </div>
         )}
 
@@ -71,7 +73,7 @@ export default function Home() {
           <MovieGridSkeleton count={8} />
         ) : movies.length === 0 && !error ? (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg">No movies found</p>
+            <p className="text-lg">{t('home.empty')}</p>
           </div>
         ) : (
           <MovieGrid movies={movies} />

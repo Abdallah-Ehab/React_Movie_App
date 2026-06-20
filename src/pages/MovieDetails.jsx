@@ -8,15 +8,16 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWishlist } from '@/context/WishlistContext'
+import { useLocale } from '@/context/LocaleContext'
 import { imageUrl, tmdbFetch } from '@/lib/tmdb'
 
-function formatRuntime(minutes) {
-  if (!minutes) return 'Runtime unavailable'
+function formatRuntime(minutes, t) {
+  if (!minutes) return t('movie.runtimeUnavailable')
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
-  if (!hours) return `${mins}m`
-  if (!mins) return `${hours}h`
-  return `${hours}h ${mins}m`
+  if (!hours) return t('movie.minutesShort', { count: mins })
+  if (!mins) return t('movie.hoursShort', { count: hours })
+  return `${t('movie.hoursShort', { count: hours })} ${t('movie.minutesShort', { count: mins })}`
 }
 
 function MovieDetailsSkeleton() {
@@ -47,14 +48,24 @@ function MovieDetailsSkeleton() {
 export default function MovieDetails() {
   const { id } = useParams()
   const { toggleWishlist, isInWishlist } = useWishlist()
+  const { t, tmdbLanguage } = useLocale()
 
   const results = useQueries({
     queries: [
-      { queryKey: ['movie', id], queryFn: () => tmdbFetch(`/movie/${id}`) },
-      { queryKey: ['movie', id, 'videos'], queryFn: () => tmdbFetch(`/movie/${id}/videos`) },
       {
-        queryKey: ['movie', id, 'recommendations'],
-        queryFn: () => tmdbFetch(`/movie/${id}/recommendations`, { page: 1 }),
+        queryKey: ['movie', id, tmdbLanguage],
+        queryFn: () => tmdbFetch(`/movie/${id}`, { language: tmdbLanguage }),
+      },
+      {
+        queryKey: ['movie', id, 'videos', tmdbLanguage],
+        queryFn: () => tmdbFetch(`/movie/${id}/videos`, { language: tmdbLanguage }),
+      },
+      {
+        queryKey: ['movie', id, 'recommendations', tmdbLanguage],
+        queryFn: () => tmdbFetch(`/movie/${id}/recommendations`, {
+          page: 1,
+          language: tmdbLanguage,
+        }),
       },
     ],
   })
@@ -64,8 +75,10 @@ export default function MovieDetails() {
   const error = movieQuery.error || videosQuery.error || recsQuery.error
 
   useEffect(() => {
-    document.title = movieQuery.data ? `${movieQuery.data.title} | Movie App` : 'Movie Details | Movie App'
-  }, [movieQuery.data])
+    document.title = movieQuery.data
+      ? `${movieQuery.data.title} | ${t('app.name')}`
+      : t('movie.detailsTitle')
+  }, [movieQuery.data, t])
 
   if (loading) {
     return (
@@ -84,10 +97,10 @@ export default function MovieDetails() {
         <Navbar />
         <section className="px-8 py-16 max-w-[900px] mx-auto text-center">
           <h1 className="text-3xl font-semibold mb-4">
-            {notFound ? 'Movie not found' : 'Failed to load movie'}
+            {notFound ? t('movie.notFound') : t('movie.loadFailed')}
           </h1>
           <p className="text-muted-foreground mb-6">
-            {notFound ? 'We could not find that movie.' : error.message}
+            {notFound ? t('movie.couldNotFind') : error.message}
           </p>
         </section>
       </div>
@@ -97,7 +110,7 @@ export default function MovieDetails() {
   const movie = movieQuery.data
   if (!movie) return null
 
-  const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 'TBA'
+  const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : t('common.tba')
   const liked = isInWishlist(movie.id)
   const videos = videosQuery.data?.results || []
   const recommendations = recsQuery.data?.results || []
@@ -138,8 +151,8 @@ export default function MovieDetails() {
               <h2 className="text-3xl font-semibold mb-3">{movie.title}</h2>
               <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 <span>{releaseYear}</span>
-                <span>{formatRuntime(movie.runtime)}</span>
-                <span>{movie.vote_average ? movie.vote_average.toFixed(1) : 'NR'} / 10</span>
+                <span>{formatRuntime(movie.runtime, t)}</span>
+                <span>{movie.vote_average ? movie.vote_average.toFixed(1) : t('movie.notRated')} / 10</span>
               </div>
             </div>
 
@@ -154,7 +167,7 @@ export default function MovieDetails() {
             )}
 
             <p className="max-w-3xl text-base leading-7 text-muted-foreground">
-              {movie.overview || 'No overview is available for this movie.'}
+              {movie.overview || t('movie.noOverview')}
             </p>
 
             <Button
@@ -162,14 +175,14 @@ export default function MovieDetails() {
               className="w-fit bg-[#FFE353] text-[#292D32] hover:bg-[#E8C83A]"
             >
               <HeartIcon filled={liked} />
-              {liked ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              {liked ? t('movie.removeWishlist') : t('movie.addWishlist')}
             </Button>
           </div>
         </section>
 
         {trailer && (
           <section className="mt-12">
-            <h2 className="text-3xl font-semibold mb-6">Trailer</h2>
+            <h2 className="text-3xl font-semibold mb-6">{t('movie.trailer')}</h2>
             <div className="aspect-video overflow-hidden rounded-[19px] bg-muted shadow-md">
               <iframe
                 src={`https://www.youtube.com/embed/${trailer.key}`}
@@ -184,7 +197,7 @@ export default function MovieDetails() {
 
         {recommendations.length > 0 && (
           <section className="mt-12">
-            <h2 className="text-3xl font-semibold mb-6">Recommendations</h2>
+            <h2 className="text-3xl font-semibold mb-6">{t('movie.recommendations')}</h2>
             <MovieGrid movies={recommendations} />
           </section>
         )}
