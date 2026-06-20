@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useLocale } from '@/context/LocaleContext'
 import { tmdbFetch } from '@/lib/tmdb'
 
 function buildParams({ page, sortBy, genreIds }) {
@@ -26,13 +27,14 @@ function buildParams({ page, sortBy, genreIds }) {
 }
 
 export function useMovies({ page = 1, sortBy, genreIds } = {}) {
+  const { tmdbLanguage } = useLocale()
   const params = buildParams({ page, sortBy, genreIds })
   const needsDiscover = params.sort_by || params.with_genres
   const endpoint = needsDiscover ? '/discover/movie' : '/movie/now_playing'
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['movies', endpoint, params],
-    queryFn: () => tmdbFetch(endpoint, params),
+    queryKey: ['movies', endpoint, params, tmdbLanguage],
+    queryFn: () => tmdbFetch(endpoint, { ...params, language: tmdbLanguage }),
   })
 
   return {
