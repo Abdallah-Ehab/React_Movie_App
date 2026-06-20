@@ -1,19 +1,26 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeart } from '@fortawesome/free-regular-svg-icons'
-import { faMoon, faSun } from '@fortawesome/free-solid-svg-icons'
+import { faMoon, faSun, faUser } from '@fortawesome/free-solid-svg-icons'
 import { useWishlist } from '@/context/WishlistContext'
 import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 
 export default function Navbar() {
   const navigate = useNavigate()
   const { wishlist } = useWishlist()
   const { theme, toggleTheme } = useTheme()
+  const { user, logout } = useAuth()
 
   return (
     <nav className="flex items-center justify-between h-[55px] px-8 bg-[#FFE353]">
-      <span className="font-bold text-base text-[#292D32]">Movie App</span>
+      <button
+        onClick={() => navigate('/')}
+        className="font-bold text-base text-[#292D32] cursor-pointer"
+      >
+        Movie App
+      </button>
 
       <div className="flex items-center gap-6">
         <button
@@ -28,6 +35,37 @@ export default function Navbar() {
             </span>
           )}
         </button>
+
+        {!user ? (
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/login')}
+            className="text-[#292D32] cursor-pointer"
+          >
+            Login
+          </Button>
+        ) : (
+          <>
+            <button
+              onClick={() => navigate('/account')}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <FontAwesomeIcon icon={faUser} className="text-[#292D32]" />
+              <span className="text-sm text-[#292D32]">
+                {user.username || user.email}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                logout()
+                navigate('/')
+              }}
+              className="text-sm text-[#292D32] cursor-pointer hover:underline"
+            >
+              Logout
+            </button>
+          </>
+        )}
 
         <span className="font-bold text-sm text-[#292D32]">En</span>
 
