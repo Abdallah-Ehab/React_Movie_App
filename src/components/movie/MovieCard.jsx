@@ -3,10 +3,12 @@ import HeartIcon from '@/components/HeartIcon'
 import RatingMeter from './RatingMeter'
 import { imageUrl } from '@/lib/tmdb'
 import { useWishlist } from '@/context/WishlistContext'
+import { useLocale } from '@/context/LocaleContext'
 
 export default function MovieCard({ movie }) {
   const navigate = useNavigate()
   const { toggleWishlist, isInWishlist } = useWishlist()
+  const { t } = useLocale()
   const liked = isInWishlist(movie.id)
 
   return (
@@ -27,6 +29,7 @@ export default function MovieCard({ movie }) {
         <button
           className="absolute top-3 right-3 z-10 cursor-pointer drop-shadow-lg transition-transform duration-200 hover:scale-110"
           onClick={(e) => { e.stopPropagation(); toggleWishlist(movie) }}
+          aria-label={t('movie.favorite')}
         >
           <HeartIcon filled={liked} />
         </button>
@@ -41,7 +44,7 @@ export default function MovieCard({ movie }) {
           {movie.title}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {movie.release_date || 'TBA'}
+          {movie.release_date || t('common.tba')}
         </p>
       </div>
     </div>
