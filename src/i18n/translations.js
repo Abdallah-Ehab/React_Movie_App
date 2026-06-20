@@ -16,6 +16,7 @@ export const translations = {
     'hero.subtitle': 'Millions of movies, TV shows and people to discover. Explore now.',
     'hero.placeholder': 'Search and explore....',
     'hero.search': 'Search',
+    'hero.viewAll': 'View all results',
 
     'home.title': 'Now Playing',
     'home.failed': 'Failed to load movies: {error}',
@@ -133,6 +134,7 @@ export const translations = {
     'hero.subtitle': 'ملايين الأفلام والمسلسلات والأشخاص لاكتشافهم. ابدأ الآن.',
     'hero.placeholder': 'ابحث واستكشف....',
     'hero.search': 'بحث',
+    'hero.viewAll': 'عرض جميع النتائج',
 
     'home.title': 'يعرض الآن',
     'home.failed': 'فشل تحميل الأفلام: {error}',
