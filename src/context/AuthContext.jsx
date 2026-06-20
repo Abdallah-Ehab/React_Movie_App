@@ -3,6 +3,10 @@ import { useUser, useClerk } from '@clerk/clerk-react'
 import { toast } from 'sonner'
 
 const AuthContext = createContext(null)
+const OAUTH_PROVIDERS = [
+  { id: 'google', strategy: 'oauth_google' },
+  { id: 'github', strategy: 'oauth_github' },
+]
 
 function createLocalUser(email, username) {
   return { email, username: username || email.split('@')[0] }
@@ -68,8 +72,28 @@ function LocalAuthProvider({ children }) {
     toast.success('Logged out')
   }, [])
 
+  const startLocalOAuth = useCallback(async () => {
+    const message = 'OAuth sign-in requires Clerk to be configured.'
+    setError(message)
+    toast.error(message)
+    throw new Error(message)
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading: actionLoading, error }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        loginWithOAuth: startLocalOAuth,
+        registerWithOAuth: startLocalOAuth,
+        oauthProviders: OAUTH_PROVIDERS,
+        clerkEnabled: false,
+        loading: actionLoading,
+        error,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
@@ -84,15 +108,11 @@ function ClerkAuthProvider({ children }) {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    console.log('Clerk mode: loaded=%s signedIn=%s', isLoaded, isSignedIn)
-  }, [isLoaded, isSignedIn])
-
-  useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn && clerkUser) {
       setUser({
         email: clerkUser.primaryEmailAddress?.emailAddress || '',
-        username: clerkUser.username || '',
+        username: clerkUser.username || clerkUser.fullName || '',
       })
       setError(null)
     } else {
@@ -101,7 +121,6 @@ function ClerkAuthProvider({ children }) {
   }, [isLoaded, isSignedIn, clerkUser])
 
   const login = useCallback(async (email, password) => {
-    console.log('Clerk login call with:', { email, password, emailType: typeof email, passwordType: typeof password })
     setActionLoading(true)
     setError(null)
     try {
@@ -117,11 +136,7 @@ function ClerkAuthProvider({ children }) {
       await clerk.setActive({ session: signInResponse.createdSessionId })
       toast.success('Welcome back!')
     } catch (err) {
-      console.log('Clerk login error full:', err)
-      console.log('Clerk login error errors:', err.errors)
       const message = err.errors?.[0]?.message || err.message || 'Login failed'
-      const field = err.errors?.[0]?.meta?.param || 'unknown'
-      console.log(`Clerk login error for field "${field}":`, message)
       setError(message)
       toast.error(message)
       throw new Error(message)
@@ -131,7 +146,6 @@ function ClerkAuthProvider({ children }) {
   }, [clerk])
 
   const register = useCallback(async (email, username, password) => {
-    console.log('Clerk register call with:', { email, username, password, emailType: typeof email, usernameType: typeof username, passwordType: typeof password })
     setActionLoading(true)
     setError(null)
     try {
@@ -148,11 +162,7 @@ function ClerkAuthProvider({ children }) {
         throw new Error('Registration requires additional steps')
       }
     } catch (err) {
-      console.log('Clerk register error full:', err)
-      console.log('Clerk register error errors:', err.errors)
       const message = err.errors?.[0]?.message || err.message || 'Registration failed'
-      const field = err.errors?.[0]?.meta?.param || 'unknown'
-      console.log(`Clerk register error for field "${field}":`, message)
       setError(message)
       toast.error(message)
       throw new Error(message)
@@ -160,6 +170,29 @@ function ClerkAuthProvider({ children }) {
       setActionLoading(false)
     }
   }, [clerk])
+
+  const startOAuth = useCallback(async (strategy, mode = 'signIn') => {
+    setActionLoading(true)
+    setError(null)
+    try {
+      const resource = mode === 'signUp' ? clerk.client.signUp : clerk.client.signIn
+      await resource.authenticateWithRedirect({
+        strategy,
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
+      })
+      setActionLoading(false)
+    } catch (err) {
+      const message = err.errors?.[0]?.message || err.message || 'OAuth sign-in failed'
+      setError(message)
+      toast.error(message)
+      setActionLoading(false)
+      throw new Error(message)
+    }
+  }, [clerk])
+
+  const loginWithOAuth = useCallback((strategy) => startOAuth(strategy, 'signIn'), [startOAuth])
+  const registerWithOAuth = useCallback((strategy) => startOAuth(strategy, 'signUp'), [startOAuth])
 
   const logout = useCallback(() => {
     clerk.signOut()
@@ -171,7 +204,20 @@ function ClerkAuthProvider({ children }) {
   const loading = !isLoaded || actionLoading
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, error }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        loginWithOAuth,
+        registerWithOAuth,
+        oauthProviders: OAUTH_PROVIDERS,
+        clerkEnabled: true,
+        loading,
+        error,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

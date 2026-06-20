@@ -5,23 +5,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useLocale } from '@/context/LocaleContext'
 
 const SORT_OPTIONS = [
-  { value: 'popularity.desc', label: 'Popularity' },
-  { value: 'vote_average.desc', label: 'Rating' },
-  { value: 'release_date.desc', label: 'Release Date' },
+  { value: 'popularity.desc', labelKey: 'sort.popularity' },
+  { value: 'vote_average.desc', labelKey: 'sort.rating' },
+  { value: 'release_date.desc', labelKey: 'sort.releaseDate' },
 ]
 
 export default function SortSelect({ value, onChange }) {
+  const { t } = useLocale()
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-[160px]">
-        <SelectValue placeholder="Sort by" />
+        <SelectValue placeholder={t('sort.placeholder')} />
       </SelectTrigger>
       <SelectContent>
         {SORT_OPTIONS.map((opt) => (
           <SelectItem key={opt.value} value={opt.value}>
-            {opt.label}
+            {t(opt.labelKey)}
           </SelectItem>
         ))}
       </SelectContent>
