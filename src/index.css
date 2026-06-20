@@ -81,4 +81,10 @@
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "cv11", "ss01";
   }
+  /* Ensure inputs and textareas align correctly in RTL (Arabic) locales */
+  :root[dir="rtl"] input[data-slot="input"],
+  :root[dir="rtl"] textarea[data-slot="input"] {
+    direction: rtl;
+    text-align: right;
+  }
 }
