@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useLocale } from '@/context/LocaleContext'
 
 const GENRES = [
   { id: 28, name: 'Action' },
@@ -24,6 +24,8 @@ const GENRES = [
 ]
 
 export default function GenreFilter({ selected, onChange }) {
+  const { t } = useLocale()
+
   function toggle(genreId) {
     const next = selected.includes(genreId)
       ? selected.filter((id) => id !== genreId)
@@ -42,7 +44,7 @@ export default function GenreFilter({ selected, onChange }) {
             className="cursor-pointer px-3 py-1.5 text-sm"
             onClick={() => toggle(genre.id)}
           >
-            {genre.name}
+            {t(`genres.${genre.id}`) || genre.name}
           </Badge>
         )
       })}
