@@ -1,8 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { useLocale } from '@/context/LocaleContext'
 
 export default function Pagination({ page, totalPages, onPageChange }) {
+  const { t, isRtl } = useLocale()
+
   if (totalPages <= 1) return null
 
   function goTo(p) {
@@ -29,8 +32,9 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         disabled={page <= 1}
         onClick={() => goTo(page - 1)}
         className="cursor-pointer"
+        aria-label={t('pagination.previous')}
       >
-        <FontAwesomeIcon icon={faChevronLeft} className="w-3 h-3" />
+        <FontAwesomeIcon icon={isRtl ? faChevronRight : faChevronLeft} className="w-3 h-3" />
       </Button>
 
       {start > 1 && (
@@ -81,8 +85,9 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         disabled={page >= totalPages}
         onClick={() => goTo(page + 1)}
         className="cursor-pointer"
+        aria-label={t('pagination.next')}
       >
-        <FontAwesomeIcon icon={faChevronRight} className="w-3 h-3" />
+        <FontAwesomeIcon icon={isRtl ? faChevronLeft : faChevronRight} className="w-3 h-3" />
       </Button>
     </div>
   )
