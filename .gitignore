@@ -4,5 +4,6 @@ dist/
 .DS_Store
 *.local
 *.md
+!README.md
 .vercel
 .env*
